@@ -1,7 +1,10 @@
 # ubuntu 12.04 LTS cmake version 2.8.7
 # ubuntu 14.04 LTS cmake version 2.8.12.2
 # ubuntu 16.04 LTS cmake version 3.5.1
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5.1)
+
+find_package(ld-cmake-tools REQUIRED)
+include(${LD_CMAKE_TOOLS_USE_FILE})
 
 macro(info msg)
     message(STATUS "Info: ${msg}")
@@ -45,7 +48,7 @@ ENDIF()
 
 IF (${ROS_BUILD_TYPE})
   message(STATUS "Building in a ROS environment")
-  project(librealsense)
+  project(librealsense VERSION 1.12.1)
 
   #################################
   # catkin specific configuration #
@@ -62,7 +65,7 @@ IF (${ROS_BUILD_TYPE})
     LIBRARIES realsense
   )
 ELSE()
-  project(Realsense)
+  project(librealsense VERSION 1.12.1)
 ENDIF()
 
 # Save the command line compile commands in the build output
@@ -203,26 +206,14 @@ else()
     add_library(realsense STATIC ${REALSENSE_CPP} ${REALSENSE_HPP})
 endif()
 
-target_include_directories(realsense PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/ ${LIBUSB1_INCLUDE_DIRS})
+target_include_directories(realsense PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/> ${LIBUSB1_INCLUDE_DIRS})
 
-IF (${ROS_BUILD_TYPE})
-    install(TARGETS realsense
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    )
-
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-ELSE()
-    install( TARGETS realsense
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
-
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/librealsense DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-ENDIF()
+cmake_make_installation(
+    TARGETS realsense
+    NAMESPACE librealsense
+    CMAKE_IN cmake/Config.cmake.in
+    HEADER_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    HEADER_PATTERNS "*.*")
 
 option(BUILD_EXAMPLES "Build realsense examples." OFF)
 if(BUILD_EXAMPLES)
